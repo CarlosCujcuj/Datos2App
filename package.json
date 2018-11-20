@@ -1,0 +1,16 @@
+{
+  "name": "Twitter01",
+  "version": "1.0.0",
+  "description": "Twitter API ",
+  "main": "index.js",
+  "scripts": {
+    "start": "node twitter-example.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Carlos Cujcuj",
+  "license": "ISC",
+  "dependencies": {
+    "twit": "^2.2.11",
+    "url": "^0.11.0"
+  }
+}
