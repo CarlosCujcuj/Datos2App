@@ -232,10 +232,10 @@ function Consulta(){
       }else{
 
         var T = new Twit({ //credenciales para twitter
-          consumer_key:         'zUZhwuDWTcLAyBTheAy7XEy5L',
-          consumer_secret:      't8TdKvQVLEm1SHFYIAWQPS0eXxEDRe5XEIZOINecZnpLvBl6DH',
-          access_token:         '1027718053-qR9BjZM0tporXLzMBFwHTY7VvDh4HoupspDOUCT',
-          access_token_secret:  'Aed4VyOZvYtGtd4DmytNXBahK6yDU2jKlPfdMk6X9CBMT',
+          consumer_key:         'your_consumer_key',
+          consumer_secret:      'your_consumer_secret',
+          access_token:         'your_access_token',
+          access_token_secret:  'your_access_token_secret',
         })
 
 
