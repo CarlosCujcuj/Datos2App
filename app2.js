@@ -1,22 +1,46 @@
 
 var http = require("http");
 const express = require('express');
-const app = express();
 var Twit = require('twit');
 const uuidv1 = require('uuid/v1');
 var fs = require('fs');
+var redis = require('redis');
+var uniqid = require('uniqid');
 
+const app = express();
 var word = 'taco'; //keyword para buscar en tweets
+var valores;
 var uid = "";
 var keyword1 = "";
 var time = "";
 var date = "";
+var uidParm1;
 
+//levanta el cliente de elasticsearch
 var elasticsearch = require('elasticsearch');
-var client = new elasticsearch.Client({
+var clientElastic = new elasticsearch.Client({
    hosts: 'http://localhost:9200',
    log: 'trace'
 });
+
+
+//manda un ping para verificar que si esta funcionando el server
+clientElastic.ping({
+     requestTimeout: 30000,
+ }, function(error) {
+     if (error) {
+         console.error('elasticsearch cluster is down!');
+     } else {
+         console.log('Everything is ok');
+     }
+ });
+
+//levanta el cliente de Redis
+var clientRedis = redis.createClient();    //levanta al cliente de redis
+   clientRedis.on('error', function(err){
+   console.log('Something went wrong ', err)
+   });
+
 
 
 app.get('/', function (req, res) {
@@ -29,7 +53,8 @@ app.get('/search/:keyword', function (req, res) {
   uid1 = req.params.uid; //Obtiene el UID de la URL
   SaveLogs(uid1,word) //Envia el keyword y UID para guardar en LOGS
   //Consulta();
-  res.send('Fecha: '+date+'    Hora: '+time+'    Keyword: '+keyword1+'   UID: '+uid); //respuesta al cliente
+  //PENDIENTE: usar promises para madar respuesta de lo guardado
+  res.send('Fecha: '+date+'    Hora: '+time+'    Keyword: '+keyword1+'   UID: '+uid + '    Valores guardardos: '+valores); //respuesta al cliente
 });
 
 //Busqueda de keyword con UID
@@ -40,10 +65,85 @@ app.get('/search/:keyword/:uid', function (req, res) {
   res.send('Fecha: '+date+'    Hora: '+time+'    Keyword: '+keyword1+'   UID: '+uid); //respuesta al cliente
 });
 
+app.get('/query/:keyword', function (req, res) {
+  word = req.params.keyword;
+  //busqueda a elasticsearch con la keyword
+  clientElastic.search({
+    index: 'tweet',
+    //type: 'tweets',
+    body: {
+      query: {
+        match: {
+            "texto" : `${word}`
+        }
+      }
+    }
+  }).then(function (resp) {
+      var hits = resp.hits.hits;
+      res.send(hits);
+  }, function (err) {
+      console.trace(err.message);
+  });
+
+/*
+  clientElastic.search({
+      index: 'tweet',
+      type: 'get',
+      body: {
+        query: {
+          match: {
+            "texto": `${word}`
+          }
+        }
+      }
+  }).then(function (resp) {
+      console.log(resp);
+      res.send(resp);
+  }, function (err) {
+      console.trace(err.message);
+  });
+/*
+  const response = await clientElastic.search({
+  index: 'tweet',
+  body: {
+    query: {
+      match: {
+        "texto": `${word}`
+      }
+    }
+  }
+})
+
+for (const tweet of response.hits.hits) {
+  console.log('Respuesta:', tweet);
+}
+*/
+});
+
+app.get('/historial/:uidParm', function (req, res) {
+  uidParm1 = req.params.uidParm;
+
+  clientElastic.search({
+    index: 'logsapp',
+    //type: 'tweets',
+    body: {
+      query: {
+        match: {
+            "UID" : `${uidParm1}`
+        }
+      }
+    }
+  }).then(function (resp) {
+      var hits = resp.hits.hits;
+      res.send(hits);
+  }, function (err) {
+      console.trace(err.message);
+  });
+});
 
 /*
 //crea indice
- client.indices.create({
+ clientclientElastic.indices.create({
      index: 'tweet'
  }, function(err, resp, status) {
      if (err) {
@@ -54,7 +154,7 @@ app.get('/search/:keyword/:uid', function (req, res) {
  });
 
 //crea index logs
-client.indices.create({
+clientElastic.indices.create({
     index: 'logsapp'
 }, function(err, resp, status) {
     if (err) {
@@ -75,7 +175,7 @@ function SaveLogs(uid1, word){
   var newLine= "\r\n";
 
   if (uid1 == null) {
-      uid = uuidv1();
+      uid = uniqid();
       console.log(uid);
   }else{
       uid = uid1;
@@ -105,7 +205,7 @@ function SaveLogs(uid1, word){
   });
   */
 
-  client.index({
+  clientElastic.index({
   index: 'logsapp',//especificas el indice a guardar
   type: 'posts', //metodo para elastic (POST)
   body: {
@@ -119,62 +219,63 @@ function SaveLogs(uid1, word){
 
 }
 
-
-
-
 //Consulta al API
 function Consulta(){
+  clientRedis.exists(word, function(err, reply) {
+      if (reply === 1) { //busca si la keyword esta en la db
+        console.log('Key encontrada \n');
+        clientRedis.smembers(word, function(err, names){
+        console.log(names);
+        });
+          clientRedis.quit();
+
+      }else{
+
+        var T = new Twit({ //credenciales para twitter
+          consumer_key:         'zUZhwuDWTcLAyBTheAy7XEy5L',
+          consumer_secret:      't8TdKvQVLEm1SHFYIAWQPS0eXxEDRe5XEIZOINecZnpLvBl6DH',
+          access_token:         '1027718053-qR9BjZM0tporXLzMBFwHTY7VvDh4HoupspDOUCT',
+          access_token_secret:  'Aed4VyOZvYtGtd4DmytNXBahK6yDU2jKlPfdMk6X9CBMT',
+        })
 
 
-  client.ping({
-       requestTimeout: 30000,
-   }, function(error) {
-       if (error) {
-           console.error('elasticsearch cluster is down!');
-       } else {
-           console.log('Everything is ok');
-       }
-   });
+        T.get('search/tweets', { q: word , since: 2017-07-10, count:5 }, function(err, data, response) {
+        //console.log(data);
+        var len = Object.keys(data.statuses).length;
+        console.log(len);
+         for (i = 0 ; i < len ; i++) { //for para guardar todos los resultados
 
+           //console.log(data.statuses[i].text);
+           //console.log(data.statuses[i]);
 
+           //guarda en variable text el texto del tweet
+          text = JSON.stringify(data.statuses[i].text)
+          //guarda cada respuesta de twitter a elasticsearch
+          clientRedis.sadd(word, text); //guarda resultados en un set en Redis
+          clientElastic.index({
+          index: 'tweet',//especificas el indice a guardar
+          type: 'posts', //metodo para elastic (POST)
+          body: {
+               "key": word, //campos que se desean guardar
+               "texto": text,
+           }
+          }, function(err, resp, status) {
+                  console.log(resp);
+                }); //fin elastic
+        }//fin for
 
-  var T = new Twit({ //credenciales para twitter
-    consumer_key:         'YOUR_CONSUMER_KEY',
-    consumer_secret:      'YOUR_CONSUMER_SECRET',
-    access_token:         'YOUR_ACCES_TOKEN',
-    access_token_secret:  'YOUR_TOKEN_SECRET',
-  })
+        //imprime los valores de la keyword en Redis
+        clientRedis.smembers(word, function(err, names){
+        console.log(names);
+        valores = names;
+        });
 
-
-
-
-    T.get('search/tweets', { q: word , since: 2017-07-10, count:1 }, function(err, data, response) {
-    //console.log(data);
-    var len = Object.keys(data.statuses).length;
-    console.log(len);
-     for (i = 0 ; i < len ; i++) { //for para guardar todos los resultados
-
-       //console.log(data.statuses[i].text);
-       //console.log(data.statuses[i]);
-
-      text = JSON.stringify(data.statuses[i].text)
-      client.index({
-      index: 'tweet',//especificas el indice a guardar
-      type: 'posts', //metodo para elastic (POST)
-      body: {
-           "key": word, //campos que se desean guardar
-           "texto": text,
-       }
-      }, function(err, resp, status) {
-              console.log(resp);
-              });
-    }
-
+      });//fin llamada a twitter
+      }
     });
 
+
 }
-
-
 
 
 module.exports = app;
