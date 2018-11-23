@@ -5,6 +5,7 @@ var fs = require('fs');
 var redis = require('redis');
 var uniqid = require('uniqid');
 var elasticsearch = require('elasticsearch');
+const profiler = require('v8-profiler')
 const app = express();
 //levanta al cliente de redis
 var clientRedis = redis.createClient();
@@ -18,6 +19,25 @@ var time = "";
 var date = "";
 var resultText = "";
 var uidParm1;
+
+const snapshot = profiler.takeSnapshot()
+
+snapshot.export(function(error, result){
+  fs.writeFileSync('nodehero.heapsnapshot', result)
+  snapshot.delete()
+
+})
+
+setTimeout(function(){
+  const snapshotAfter = profiler.takeSnapshot()
+  snapshotAfter.export(function(error, result){
+    fs.writeFileSync('nodehero-2.heapsnapshot', result)
+    snapshotAfter.delete()
+    process.exit()
+  })
+
+},3000)
+
 
 //levanta el cliente de elasticsearch
 var clientElastic = new elasticsearch.Client({
