@@ -16,19 +16,19 @@ And visualize potential revenue we could get by having a fee by search*
 
 ## Funcionalidad
 Esta app fue desarrollado con NodeJS con las siguientes dependencias >(npm install.txt)
--express
--http-server
--promised-twit
--file-system
--redis
--uniqid
--elasticsearch
+- express
+- http-server
+- promised-twit
+- file-system
+- redis
+- uniqid
+- elasticsearch
 
 Las herramientas y estrategias para la gestion de datos
-*Redis (cache)
-*Elasticsearch (DB index)
-*Kibana (Viasualize)
-*Logstach (Pipeline)
+* Redis (cache)
+* Elasticsearch (DB index)
+* Kibana (Viasualize)
+* Logstach (Pipeline)
 
 ## Instalación
 1. Instalar dependencias con npm mirar archivo >(npm install.txt)
