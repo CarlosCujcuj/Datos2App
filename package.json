@@ -10,7 +10,16 @@
   "author": "Carlos Cujcuj",
   "license": "ISC",
   "dependencies": {
+    "elasticsearch": "^15.2.0",
+    "express": "^4.16.4",
+    "file-system": "^2.2.2",
+    "http-server": "^0.11.1",
+    "npm-install-all": "^1.1.21",
+    "promised-twit": "^0.1.0",
+    "redis": "^2.8.0",
     "twit": "^2.2.11",
+    "twit-promise": "^2.1.0",
+    "uniqid": "^5.0.3",
     "url": "^0.11.0"
   }
 }

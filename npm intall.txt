@@ -1,0 +1,7 @@
+npm i express
+npm i http-server
+npm i promised-twit
+npm i file-system
+npm i redis
+npm i uniqid
+npm i elasticsearch
