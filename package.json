@@ -16,7 +16,7 @@
     "http-server": "^0.11.1",
     "npm-install-all": "^1.1.21",
     "promised-twit": "^0.1.0",
-    "redis": "^2.8.0",
+    "redis": "^3.1.1",
     "twit": "^2.2.11",
     "twit-promise": "^2.1.0",
     "uniqid": "^5.0.3",
